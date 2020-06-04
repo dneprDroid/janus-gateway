@@ -162,7 +162,13 @@ $(document).ready(function() {
 											myid = msg["id"];
 											mypvtid = msg["private_id"];
 											Janus.log("Successfully joined room " + msg["room"] + " with ID " + myid);
-											publishOwnFeed(true);
+											let hasPublishers = msg["publishers"] && msg["publishers"].length > 0;
+											if (hasPublishers) {
+												console.log('should be only as viewer');
+											} else {
+												console.log('publishOwnFeed......');
+												publishOwnFeed(true);
+											}
 											// Any new feed to attach to?
 											if(msg["publishers"]) {
 												var list = msg["publishers"];
