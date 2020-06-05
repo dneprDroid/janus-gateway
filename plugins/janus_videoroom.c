@@ -5563,6 +5563,7 @@ static void *janus_videoroom_handler(void *data) {
 		if(msg == &exit_message)
 			break;
 		if(msg->handle == NULL) {
+            JANUS_LOG(LOG_ERR, "msg->handle == NULL...\n");
 			janus_videoroom_message_free(msg);
 			continue;
 		}
@@ -5577,6 +5578,7 @@ static void *janus_videoroom_handler(void *data) {
 			continue;
 		}
 		if(g_atomic_int_get(&session->destroyed)) {
+            JANUS_LOG(LOG_ERR, "g_atomic_int_get(&session->destroyed)...\n");
 			janus_mutex_unlock(&sessions_mutex);
 			janus_videoroom_message_free(msg);
 			continue;
@@ -5596,8 +5598,10 @@ static void *janus_videoroom_handler(void *data) {
 		JANUS_VALIDATE_JSON_OBJECT(root, request_parameters,
 			error_code, error_cause, TRUE,
 			JANUS_VIDEOROOM_ERROR_MISSING_ELEMENT, JANUS_VIDEOROOM_ERROR_INVALID_ELEMENT);
-		if(error_code != 0)
+        if(error_code != 0) {
+            JANUS_LOG(LOG_ERR, "invalid json msg??\n");
 			goto error;
+        }
 		json_t *request = json_object_get(root, "request");
 		const char *request_text = json_string_value(request);
 		json_t *event = NULL;
@@ -6131,7 +6135,7 @@ static void *janus_videoroom_handler(void *data) {
 					if(legacy)
 						json_object_set_new(event, "warning", json_string("Deprecated use of 'listener' ptype, update to the new 'subscriber' ASAP"));
 					session->participant_type = janus_videoroom_p_type_subscriber;
-					JANUS_LOG(LOG_VERB, "Preparing JSON event as a reply\n");
+					JANUS_LOG(LOG_VERB, "Preparing JSON event as a reply--1\n");
 					/* Negotiate by sending the selected publisher SDP back */
 					janus_mutex_lock(&publisher->subscribers_mutex);
 					if(publisher->sdp != NULL) {
@@ -6211,6 +6215,7 @@ static void *janus_videoroom_handler(void *data) {
 				g_snprintf(error_cause, 512, "Already in as a publisher on this handle");
 				goto error;
 			} else if(!strcasecmp(request_text, "configure") || !strcasecmp(request_text, "publish")) {
+                JANUS_LOG(LOG_INFO, "Handle configure or publish '%s'\n", request_text);
 				if(!strcasecmp(request_text, "publish") && participant->sdp) {
 					janus_refcount_decrease(&participant->ref);
 					JANUS_LOG(LOG_ERR, "Can't publish, already published\n");
@@ -6933,7 +6938,7 @@ static void *janus_videoroom_handler(void *data) {
 		}
 
 		/* Prepare JSON event */
-		JANUS_LOG(LOG_VERB, "Preparing JSON event as a reply\n");
+		JANUS_LOG(LOG_VERB, "Preparing JSON event as a reply---2\n");
 		/* Any SDP or update to handle? */
 		const char *msg_sdp_type = json_string_value(json_object_get(msg->jsep, "type"));
 		const char *msg_sdp = json_string_value(json_object_get(msg->jsep, "sdp"));
@@ -7357,6 +7362,7 @@ error:
 			json_object_set_new(event, "videoroom", json_string("event"));
 			json_object_set_new(event, "error_code", json_integer(error_code));
 			json_object_set_new(event, "error", json_string(error_cause));
+            JANUS_LOG(LOG_ERR, "   error in handler: error_code=%i, error_cause='%s'\n", error_code, error_cause);
 			int ret = gateway->push_event(msg->handle, &janus_videoroom_plugin, msg->transaction, event, NULL);
 			JANUS_LOG(LOG_VERB, "  >> Pushing event: %d (%s)\n", ret, janus_get_api_error(ret));
 			json_decref(event);
