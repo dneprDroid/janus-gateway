@@ -6194,6 +6194,7 @@ static void *janus_videoroom_handler(void *data) {
 			}
 		} else if(session->participant_type == janus_videoroom_p_type_publisher) {
 			/* Handle this publisher */
+            JANUS_LOG(LOG_INFO, "session->participant_type == janus_videoroom_p_type_publisher\n");
 			participant = janus_videoroom_session_get_publisher(session);
 			if(participant == NULL) {
 				JANUS_LOG(LOG_ERR, "Invalid participant instance\n");
@@ -6481,6 +6482,7 @@ static void *janus_videoroom_handler(void *data) {
 			janus_refcount_decrease(&participant->ref);
 		} else if(session->participant_type == janus_videoroom_p_type_subscriber) {
 			/* Handle this subscriber */
+            JANUS_LOG(LOG_INFO, "session->participant_type == janus_videoroom_p_type_subscriber\n");
 			janus_videoroom_subscriber *subscriber = (janus_videoroom_subscriber *)session->participant;
 			if(subscriber == NULL) {
 				JANUS_LOG(LOG_ERR, "Invalid subscriber instance\n");
