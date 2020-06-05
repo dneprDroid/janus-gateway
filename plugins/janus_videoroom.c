@@ -4681,7 +4681,6 @@ struct janus_plugin_result *janus_videoroom_handle_message(janus_plugin_session 
 	json_t *request = json_object_get(root, "request");
 	/* Some requests ('create', 'destroy', 'exists', 'list') can be handled synchronously */
 	const char *request_text = json_string_value(request);
-    JANUS_LOG(LOG_VERB, "Handle request_text '%s'\n", request_text);
 	/* We have a separate method to process synchronous requests, as those may
 	 * arrive from the Admin API as well, and so we handle them the same way */
 	response = janus_videoroom_process_synchronous_request(session, root);
@@ -4693,7 +4692,7 @@ struct janus_plugin_result *janus_videoroom_handle_message(janus_plugin_session 
 			|| !strcasecmp(request_text, "start") || !strcasecmp(request_text, "pause") || !strcasecmp(request_text, "switch")
 			|| !strcasecmp(request_text, "leave")) {
 		/* These messages are handled asynchronously */
-        JANUS_LOG(LOG_VERB, "Handle request_text asynchronously '%s'\n", request_text);
+
 		janus_videoroom_message *msg = g_malloc(sizeof(janus_videoroom_message));
 		msg->handle = handle;
 		msg->transaction = transaction;
@@ -6510,12 +6509,10 @@ static void *janus_videoroom_handler(void *data) {
 				json_object_set_new(event, "room", string_ids ? json_string(subscriber->room_id_str) : json_integer(subscriber->room_id));
 				json_object_set_new(event, "started", json_string("ok"));
 			} else if(!strcasecmp(request_text, "configure")) {
-                JANUS_LOG(LOG_VERB, "Handle configure '%s'\n", request_text);
 				JANUS_VALIDATE_JSON_OBJECT(root, configure_parameters,
 					error_code, error_cause, TRUE,
 					JANUS_VIDEOROOM_ERROR_MISSING_ELEMENT, JANUS_VIDEOROOM_ERROR_INVALID_ELEMENT);
 				if(error_code != 0) {
-                    JANUS_LOG(LOG_ERR, "Handle configure invalid object - '%s'\n", request_text);
 					janus_refcount_decrease(&subscriber->ref);
 					goto error;
 				}
@@ -6580,10 +6577,6 @@ static void *janus_videoroom_handler(void *data) {
 					if(data && publisher->data && subscriber->data_offered)
 						subscriber->data = json_is_true(data);
 					/* Check if a simulcasting-related request is involved */
-                    if (publisher->rid[0] == NULL)
-                        JANUS_LOG(LOG_ERR, "publisher->rid[0] == NULL '%s'\n", request_text);
-                    else
-                        JANUS_LOG(LOG_VERB, "publisher->rid[0] != NULL '%s'\n", request_text);
 					if(sc_substream && (publisher->ssrc[0] != 0 || publisher->rid[0] != NULL)) {
 						subscriber->sim_context.substream_target = json_integer_value(sc_substream);
 						JANUS_LOG(LOG_VERB, "Setting video SSRC to let through (simulcast): %"SCNu32" (index %d, was %d)\n",
@@ -6592,7 +6585,6 @@ static void *janus_videoroom_handler(void *data) {
 							subscriber->sim_context.substream);
 						if(subscriber->sim_context.substream_target == subscriber->sim_context.substream) {
 							/* No need to do anything, we're already getting the right substream, so notify the user */
-                            JANUS_LOG(LOG_VERB, "No need to do anything, we're already getting the right substream, so notify the user \n");
 							json_t *event = json_object();
 							json_object_set_new(event, "videoroom", json_string("event"));
 							json_object_set_new(event, "room", string_ids ? json_string(subscriber->room_id_str) : json_integer(subscriber->room_id));
@@ -6600,13 +6592,10 @@ static void *janus_videoroom_handler(void *data) {
 							gateway->push_event(msg->handle, &janus_videoroom_plugin, NULL, event, NULL);
 							json_decref(event);
 						} else {
-                            JANUS_LOG(LOG_VERB, "Simulcasting substream change \n");
 							/* Send a FIR */
 							janus_videoroom_reqpli(publisher, "Simulcasting substream change");
 						}
-                    } else {
-                        JANUS_LOG(LOG_ERR, "Simulcasting substream change NOT SUPPORTED \n");
-                    }
+					}
 					if(subscriber->feed && subscriber->feed->vcodec == JANUS_VIDEOCODEC_VP8 &&
 							sc_temporal && (publisher->ssrc[0] != 0 || publisher->rid[0] != NULL)) {
 						subscriber->sim_context.templayer_target = json_integer_value(sc_temporal);
@@ -6622,12 +6611,9 @@ static void *janus_videoroom_handler(void *data) {
 							json_decref(event);
 						} else {
 							/* Send a FIR */
-                            JANUS_LOG(LOG_VERB, "Simulcasting temporal change \n");
 							janus_videoroom_reqpli(publisher, "Simulcasting temporal layer change");
 						}
-                    } else {
-                        JANUS_LOG(LOG_ERR, "Simulcasting temporal change NOT SUPPORTED \n");
-                    }
+					}
 					if(sc_fallback && (publisher->ssrc[0] != 0 || publisher->rid[0] != NULL)) {
 						subscriber->sim_context.drop_trigger = json_integer_value(sc_fallback);
 					}
